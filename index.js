@@ -246,21 +246,21 @@ async function sendInteractiveListMessage({ phoneNumberId, to }) {
               type: 'reply',
               reply: {
                 id: '02chatbotseeexample',
-                title: '🔁 See a real example'
+                title: '🔁 See real example'
               }
             },
             {
               type: 'reply',
               reply: {
                 id: '02chatbotwatchvideo',
-                title: '▶ Watch a short video'
+                title: '▶ Watch short video'
               }
             },
             {
               type: 'reply',
               reply: {
                 id: '02chatbottalkexpert',
-                title: '📅 Talk to an expert'
+                title: '📅 Talk to expert'
               }
             }
           ]
@@ -310,21 +310,21 @@ async function sendInteractiveListMessage({ phoneNumberId, to }) {
               type: 'reply',
               reply: {
                 id: '02aicallerseeexample',
-                title: '🔁 See a real example'
+                title: '🔁 See real example'
               }
             },
             {
               type: 'reply',
               reply: {
                 id: '02aicallerwatchvideo',
-                title: '▶ Watch a short video'
+                title: '▶ Watch short video'
               }
             },
             {
               type: 'reply',
               reply: {
                 id: '02aicallertalkexpert',
-                title: '📅 Talk to an expert'
+                title: '📅 Talk to expert'
               }
             }
           ]
