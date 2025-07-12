@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const axios = require('axios');
 const { sendButtonMessage, sendChatbotMessage, sendAICallerMessage, sendBookDemoMessage } = require('./utils/Step1handlers');
+const { sendLeaveConfirmationAndMenu } = require('./utils/step2');
 const { sendAdminInitialButtons, sendAdminLeaveDateList } = require('./utils/Step1');
 const { parseDateFromId } = require('./utils/helpers');
 const connectDB = require('./db');
