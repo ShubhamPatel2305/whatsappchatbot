@@ -2,7 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const axios = require('axios');
 const { sendButtonMessage, sendChatbotMessage, sendAICallerMessage, sendBookDemoMessage } = require('./utils/Step1handlers');
-const { sendLeaveConfirmationAndMenu } = require('./utils/step2');
+const { sendLeaveConfirmationAndMenu, sendPromptForTimeSlots } = require('./utils/step2');
 const { sendAdminInitialButtons, sendAdminLeaveDateList } = require('./utils/Step1');
 const { parseDateFromId } = require('./utils/helpers');
 const connectDB = require('./db');
@@ -18,7 +18,13 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const OpenAI = require('openai');
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
 let isWaitingForTimeSlot = false;
+let waitingForPartial   = false;
+let partialDate         = '';
 
 // Homepage endpoint
 app.get('/homepage', (req, res) => {
@@ -88,19 +94,68 @@ app.post('/', async (req, res) => {
       
             // Call logic to save full day leave in DB for that date
           } else if (selectedId.startsWith('02partial')) {
-            // Partial leave selected for specific date
-            const date = parseDateFromId(selectedId, '02partial');
-            console.log('Admin selected partial availability for:', date);
-      
-            // You can now ask for time slots in next message
+            // 1) parse date
+            partialDate = parseDateFromId(selectedId, '02partial');
+            // 2) ask for free‑form availability
+            await sendPromptForTimeSlots({ phoneNumberId, to: from, date: partialDate });
+            // 3) set state
+            waitingForPartial = true;
           }
         }
       } else {
-        if (!isWaitingForTimeSlot) {
+
+        if (waitingForPartial && messages.type === 'text') {
+          const userText = messages.text.body;
+          // 1) build OpenAI prompt
+          const prompt = `
+            You are a time slot parser. Your job is to extract availability time ranges from a user's message and return them in a strict JSON format.
+            Only respond with a valid JSON array of objects. Each object must have a start and end field in 24-hour format (HH:mm), no seconds.
+            Do not include any text or explanation. Only return the array.
+            
+            Example input: I am available from 9am to 11am and again from 3pm to 6pm.
+            Output:
+            [
+              { "start": "09:00", "end": "11:00" },
+              { "start": "15:00", "end": "18:00" }
+            ]
+            
+            Now extract from this input:
+            "${userText}"
+                    `.trim();
+          try {
+            // 2) call OpenAI
+            const resp = await openai.chat.completions.create({
+              model:       'gpt-3.5-turbo',
+              temperature: 0,
+              messages: [{ role: 'user', content: prompt }]
+            });
+            const jsonString = resp.choices[0].message.content;
+            const timeSlots = JSON.parse(jsonString);
+  
+            // 3) save to Mongo
+            await DoctorScheduleOverride.create({
+              date:      partialDate,
+              type:      'custom_time',
+              timeSlots
+            });
+  
+            // 4) confirm back + menu
+            await sendPartialConfirmationAndMenu({
+              phoneNumberId, to: from,
+              date: partialDate, timeSlots
+            });
+          } catch (err) {
+            console.error('Error parsing/saving partial slots:', err);
+            // optionally send error message
+          } finally {
+            // reset state
+            waitingForPartial   = false;
+            partialDate         = '';
+          }
+        }
+        else if (!waitingForPartial) {
+          // …your initial admin buttons…
           await sendAdminInitialButtons({ phoneNumberId, to: messages.from });
-          isWaitingForTimeSlot = true;
-        } else {
-          // Optional: handle when already waiting (future logic)
         }
       }
     
