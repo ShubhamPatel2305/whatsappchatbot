@@ -188,8 +188,7 @@ app.post('/', async (req, res) => {
     const phoneNumberId = value && value.metadata && value.metadata.phone_number_id;
     const messages = value && value.messages && value.messages[0];
     const from = messages && messages.from;
-
-    if(messages.type === 'interactive'){
+    if(messages?.type === 'interactive'){
         if (phoneNumberId && messages.from) {
             await sendInteractiveListMessage({ phoneNumberId, to: messages.from });
         }
