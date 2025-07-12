@@ -146,14 +146,14 @@ async function sendButtonMessage({ phoneNumberId, to }) {
             type: 'reply',
             reply: {
               id: '01chatbot',
-              title: 'Want to know how chatbot helps?'
+              title: 'Chatbot'
             }
           },
           {
             type: 'reply',
             reply: {
               id: '01aicaller',
-              title: 'Want to know how AI Caller helps?'
+              title: 'AI Caller'
             }
           }
         ]
