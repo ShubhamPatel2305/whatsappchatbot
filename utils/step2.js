@@ -97,11 +97,11 @@ async function sendPartialConfirmationAndMenu({ phoneNumberId, to, date, timeSlo
         buttons: [
           {
             type: 'reply',
-            reply: { id: '01set_full_day_leave',   title: 'Set Full day Leave' }
+            reply: { id: '01_set_full_day_leave',   title: 'Set Full day Leave' }
           },
           {
             type: 'reply',
-            reply: { id: '01set_partial_leave',    title: 'Set Partial Leave' }
+            reply: { id: '01_set_partial_leave',    title: 'Set Partial Leave' }
           }
         ]
       }
