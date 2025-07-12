@@ -19,16 +19,6 @@ app.get('/homepage', (req, res) => {
   });
 });
 
-// Root endpoint for basic health check
-app.get('/', (req, res) => {
-  res.status(200).json({
-    message: 'WhatsApp Bot API is running',
-    status: 'success',
-    endpoints: {
-      homepage: '/homepage'
-    }
-  });
-});
 
 
 const verifyToken = process.env.VERIFY_TOKEN;
