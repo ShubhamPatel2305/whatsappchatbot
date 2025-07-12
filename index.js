@@ -62,7 +62,7 @@ app.post('/', async (req, res) => {
                     await sendAICallerMessage({ phoneNumberId, to: messages.from });
                 }
             }
-            await sendInteractiveListMessage({ phoneNumberId, to: messages.from });
+            // await sendInteractiveListMessage({ phoneNumberId, to: messages.from });
         }
     }else{
         //send non interactive message
@@ -361,7 +361,7 @@ async function sendBookDemoMessage({ phoneNumberId, to }) {
   function getDateRows() {
     const rows = [];
     const today = new Date();
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 8; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       const day = d.getDate();
