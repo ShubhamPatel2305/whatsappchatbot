@@ -2,6 +2,10 @@ const express = require('express');
 const dotenv = require('dotenv');
 const axios = require('axios');
 const { sendButtonMessage, sendChatbotMessage, sendAICallerMessage, sendBookDemoMessage } = require('./utils/Step1handlers');
+const { sendAdminInitialButtons, sendAdminLeaveDateList } = require('./utils/Step1');
+const { parseDateFromId } = require('./utils/helpers');
+const connectDB = require('./db');
+const { DoctorScheduleOverride } = require('./models/DoctorScheduleOverride');
 
 // Load environment variables
 dotenv.config();
@@ -12,6 +16,8 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+let isWaitingForTimeSlot = false;
 
 // Homepage endpoint
 app.get('/homepage', (req, res) => {
@@ -52,7 +58,53 @@ app.post('/', async (req, res) => {
     const phoneNumberId = value && value.metadata && value.metadata.phone_number_id;
     const messages = value && value.messages && value.messages[0];
     const from = messages && messages.from;
-    if(messages?.type === 'interactive'){
+    if (from === "916355411809") {
+      if (messages?.type === 'interactive') {
+        const itf = messages.interactive;
+        if (itf?.type === 'button_reply') {
+          const buttonId = itf?.button_reply?.id;
+          if (buttonId === '01_set_full_day_leave') {
+            await sendAdminLeaveDateList({ phoneNumberId, to: messages.from, isFullDayLeave: true });
+          } else if (buttonId === '01_set_partial_leave') {
+            await sendAdminLeaveDateList({ phoneNumberId, to: messages.from, isFullDayLeave: false });
+          }
+        }else if (interactiveType === 'list_reply') {
+          const selectedId = itf?.list_reply?.id;
+      
+          if (selectedId.startsWith('02full')) {
+            // Full day leave selected for specific date
+            const date = parseDateFromId(selectedId, '02full');
+
+            try {
+              // Save to MongoDB
+              await DoctorScheduleOverride.create({ date, type: 'leave' });
+              // Confirm and show menu again
+              await sendLeaveConfirmationAndMenu({ phoneNumberId, to: from, date });
+            } catch (err) {
+              console.error('DB save error:', err);
+              // you might send an error message here
+            }
+      
+            // Call logic to save full day leave in DB for that date
+          } else if (selectedId.startsWith('02partial')) {
+            // Partial leave selected for specific date
+            const date = parseDateFromId(selectedId, '02partial');
+            console.log('Admin selected partial availability for:', date);
+      
+            // You can now ask for time slots in next message
+          }
+        }
+      } else {
+        if (!isWaitingForTimeSlot) {
+          await sendAdminInitialButtons({ phoneNumberId, to: messages.from });
+          isWaitingForTimeSlot = true;
+        } else {
+          // Optional: handle when already waiting (future logic)
+        }
+      }
+    
+      return res.sendStatus(200);
+    }else if(messages?.type === 'interactive'){
         if (phoneNumberId && messages.from) {
             if(messages?.interactive?.type === 'button_reply'){
                 if(messages?.interactive?.button_reply?.id === '01bookdemo'){
@@ -80,10 +132,16 @@ app.post('/', async (req, res) => {
   res.status(200).end();
 });
   
-// Start server
-app.listen(PORT, () => {
-  console.log(`WhatsApp Bot server is running on port ${PORT}`);
-  console.log(`Homepage endpoint: http://localhost:${PORT}/homepage`);
-});
+console.log(`Starting server on port ${PORT}...`);
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`✅ Server is running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection failed", err);
+    process.exit(1);
+  });
 
 module.exports = app;
