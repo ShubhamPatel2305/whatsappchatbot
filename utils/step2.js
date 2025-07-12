@@ -19,14 +19,14 @@ async function sendLeaveConfirmationAndMenu({ phoneNumberId, to, date }) {
           {
             type: 'reply',
             reply: {
-              id:    '01set_full_day_leave',
+              id:    '01_set_full_day_leave',
               title: 'Set Full day Leave'
             }
           },
           {
             type: 'reply',
             reply: {
-              id:    '01set_partial_leave',
+              id:    '01_set_partial_leave',
               title: 'Set Partial Leave'
             }
           }
