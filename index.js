@@ -69,7 +69,7 @@ app.post('/', async (req, res) => {
           } else if (buttonId === '01_set_partial_leave') {
             await sendAdminLeaveDateList({ phoneNumberId, to: messages.from, isFullDayLeave: false });
           }
-        }else if (interactiveType === 'list_reply') {
+        }else if (itf?.type === 'list_reply') {
           const selectedId = itf?.list_reply?.id;
       
           if (selectedId.startsWith('02full')) {
