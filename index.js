@@ -59,7 +59,7 @@ app.post('/', async (req, res) => {
     const phoneNumberId = value && value.metadata && value.metadata.phone_number_id;
     const messages = value && value.messages && value.messages[0];
     const from = messages && messages.from;
-    if (from === "916355411809") {
+    if (from === "916355411809" || from === "919313045439") {
       if (messages?.type === 'interactive') {
         const itf = messages.interactive;
         if (itf?.type === 'button_reply') {
