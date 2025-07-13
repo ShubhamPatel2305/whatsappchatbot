@@ -81,7 +81,6 @@ app.post('/', async (req, res) => {
           if (selectedId.startsWith('02full')) {
             // Full day leave selected for specific date
             const date = parseDateFromId(selectedId, '02full');
-
             try {
               // Save to MongoDB
               await DoctorScheduleOverride.create({ date, type: 'leave' });
@@ -91,8 +90,6 @@ app.post('/', async (req, res) => {
               console.error('DB save error:', err);
               // you might send an error message here
             }
-      
-            // Call logic to save full day leave in DB for that date
           } else if (selectedId.startsWith('02partial')) {
             // 1) parse date
             partialDate = parseDateFromId(selectedId, '02partial');
@@ -158,7 +155,6 @@ app.post('/', async (req, res) => {
           await sendAdminInitialButtons({ phoneNumberId, to: messages.from });
         }
       }
-    
       return res.sendStatus(200);
     }else if(messages?.type === 'interactive'){
         if (phoneNumberId && messages.from) {
@@ -171,7 +167,6 @@ app.post('/', async (req, res) => {
                     await sendAICallerMessage({ phoneNumberId, to: messages.from });
                 }
             }
-            // await sendInteractiveListMessage({ phoneNumberId, to: messages.from });
         }
     }else{
         //send non interactive message
@@ -187,6 +182,23 @@ app.post('/', async (req, res) => {
 
   res.status(200).end();
 });
+
+app.get('/webhook', (req, res) => {
+  const { 'hub.mode': mode, 'hub.challenge': challenge, 'hub.verify_token': token } = req.query;
+
+  if (mode === 'subscribe' && token === verifyToken) {
+    console.log('WEBHOOK VERIFIED');
+    res.status(200).send(challenge);
+  } else {
+    res.status(403).end();
+  }
+});
+
+app.post('/webhook', express.json(), (req, res) => {
+  console.log(req.body); // process leadgen_id
+  res.sendStatus(200);
+});
+
   
 console.log(`Starting server on port ${PORT}...`);
 connectDB()
