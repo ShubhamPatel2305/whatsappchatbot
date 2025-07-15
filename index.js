@@ -559,8 +559,10 @@ app.post('/', async (req, res) => {
     const phoneNumberId = value && value.metadata && value.metadata.phone_number_id;
     const messages = value && value.messages && value.messages[0];
     const from = messages && messages.from;
-    // Admin logic (unchanged)
+    
+    // Log which handler is being called
     if (from === "916355411808") {
+      console.log('Admin logic triggered for', from);
       if (messages?.type === 'interactive') {
         const itf = messages.interactive;
         if (itf?.type === 'button_reply') {
@@ -649,26 +651,6 @@ app.post('/', async (req, res) => {
           }
         }
         else if (!waitingForPartial) {
-          /*
-          // Old Book Demo / Chatbot / AI Caller logic (now disabled)
-          if(messages?.type === 'interactive'){
-        if (phoneNumberId && messages.from) {
-            if(messages?.interactive?.type === 'button_reply'){
-                if(messages?.interactive?.button_reply?.id === '01bookdemo'){
-                    await sendBookDemoMessage({ phoneNumberId, to: messages.from });
-                }else if(messages?.interactive?.button_reply?.id === '01chatbot'){
-                    await sendChatbotMessage({ phoneNumberId, to: messages.from });
-                }else if(messages?.interactive?.button_reply?.id === '01aicaller'){
-                    await sendAICallerMessage({ phoneNumberId, to: messages.from });
-                }
-            }
-            // await sendInteractiveListMessage({ phoneNumberId, to: messages.from });
-        }
-    }else{
-        //send non interactive message
-        // await sendButtonMessage({ phoneNumberId, to: messages.from }); // Commented out: Use only CODE CLINIC flow for all users
-          }
-          */
           // …your initial admin buttons…
           await sendAdminInitialButtons({ phoneNumberId, to: messages.from });
         }
@@ -676,7 +658,7 @@ app.post('/', async (req, res) => {
     
       return res.sendStatus(200);
     } else {
-      // For all other users, always use the new chatbot flow
+      console.log('User logic (CODE CLINIC flow) triggered for', from);
       await handleUserChatbotFlow({ from, phoneNumberId, messages, res });
       return;
     }
