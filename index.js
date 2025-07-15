@@ -649,30 +649,38 @@ app.post('/', async (req, res) => {
           }
         }
         else if (!waitingForPartial) {
+          /*
+          // Old Book Demo / Chatbot / AI Caller logic (now disabled)
+          if(messages?.type === 'interactive'){
+              if (phoneNumberId && messages.from) {
+                  if(messages?.interactive?.type === 'button_reply'){
+                      if(messages?.interactive?.button_reply?.id === '01bookdemo'){
+                          await sendBookDemoMessage({ phoneNumberId, to: messages.from });
+                      }else if(messages?.interactive?.button_reply?.id === '01chatbot'){
+                          await sendChatbotMessage({ phoneNumberId, to: messages.from });
+                      }else if(messages?.interactive?.button_reply?.id === '01aicaller'){
+                          await sendAICallerMessage({ phoneNumberId, to: messages.from });
+                      }
+                  }
+                  // await sendInteractiveListMessage({ phoneNumberId, to: messages.from });
+              }
+          }else{
+              //send non interactive message
+              if (phoneNumberId && messages.from) {
+                  await sendButtonMessage({ phoneNumberId, to: messages.from });
+              }
+          }
+          */
           // …your initial admin buttons…
           await sendAdminInitialButtons({ phoneNumberId, to: messages.from });
         }
       }
     
       return res.sendStatus(200);
-    }else if(messages?.type === 'interactive'){
-        if (phoneNumberId && messages.from) {
-            if(messages?.interactive?.type === 'button_reply'){
-                if(messages?.interactive?.button_reply?.id === '01bookdemo'){
-                    await sendBookDemoMessage({ phoneNumberId, to: messages.from });
-                }else if(messages?.interactive?.button_reply?.id === '01chatbot'){
-                    await sendChatbotMessage({ phoneNumberId, to: messages.from });
-                }else if(messages?.interactive?.button_reply?.id === '01aicaller'){
-                    await sendAICallerMessage({ phoneNumberId, to: messages.from });
-                }
-            }
-            // await sendInteractiveListMessage({ phoneNumberId, to: messages.from });
-        }
-    }else{
-        //send non interactive message
-        if (phoneNumberId && messages.from) {
-            await sendButtonMessage({ phoneNumberId, to: messages.from });
-        }
+    } else {
+      // For all other users, always use the new chatbot flow
+      await handleUserChatbotFlow({ from, phoneNumberId, messages, res });
+      return;
     }
 
     
