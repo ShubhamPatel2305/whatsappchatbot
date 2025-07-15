@@ -1,68 +1,70 @@
 const axios = require('axios');
 
 // Function to send an interactive button message (for non-interactive user messages)
-async function sendButtonMessage({ phoneNumberId, to }) {
-  const apiVersion = process.env.API_VERSION || 'v18.0';
-  const token = process.env.WHATSAPP_TOKEN;
-  const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
+// async function sendButtonMessage({ phoneNumberId, to }) {
+//   // Disabled: Old TopEdge AI flow. Use CODE CLINIC flow in index.js only.
+//   /*
+//   const apiVersion = process.env.API_VERSION || 'v18.0';
+//   const token = process.env.WHATSAPP_TOKEN;
+//   const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
 
-  const data = {
-    messaging_product: 'whatsapp',
-    recipient_type: 'individual',
-    to,
-    type: 'interactive',
-    interactive: {
-      type: 'button',
-      header: {
-        type: 'text',
-        text: 'Welcome to TopEdge AI'
-      },
-      body: {
-        text: `Hey 👋 this is Ava from TopEdge AI — super glad you reached out!\n\nWe're helping businesses like yours save hours by automating lead responses, bookings, and customer chats using smart AI tech.\n\nCan I quickly ask what you're looking for today?`
-      },
-      footer: {
-        text: 'Choose an option below:'
-      },
-      action: {
-        buttons: [
-          {
-            type: 'reply',
-            reply: {
-              id: '01bookdemo',
-              title: 'Book Demo'
-            }
-          },
-          {
-            type: 'reply',
-            reply: {
-              id: '01chatbot',
-              title: 'Chatbot'
-            }
-          },
-          {
-            type: 'reply',
-            reply: {
-              id: '01aicaller',
-              title: 'AI Caller'
-            }
-          }
-        ]
-      }
-    }
-  };
+//   const data = {
+//     messaging_product: 'whatsapp',
+//     recipient_type: 'individual',
+//     to,
+//     type: 'interactive',
+//     interactive: {
+//       type: 'button',
+//       header: {
+//         type: 'text',
+//         text: 'Welcome to TopEdge AI'
+//       },
+//       body: {
+//         text: `Hey 👋 this is Ava from TopEdge AI — super glad you reached out!\n\nWe're helping businesses like yours save hours by automating lead responses, bookings, and customer chats using smart AI tech.\n\nCan I quickly ask what you're looking for today?`
+//       },
+//       footer: {
+//         text: 'Choose an option below:'
+//       },
+//       action: {
+//         buttons: [
+//           {
+//             type: 'reply',
+//             reply: {
+//               id: '01bookdemo',
+//               title: 'Book Demo'
+//             }
+//           },
+//           {
+//             type: 'reply',
+//             reply: {
+//               id: '01chatbot',
+//               title: 'Chatbot'
+//             }
+//           },
+//           {
+//             type: 'reply',
+//             reply: {
+//               id: '01aicaller',
+//               title: 'AI Caller'
+//             }
+//           }
+//         ]
+//       }
+//     }
+//   };
 
-  try {
-    const response = await axios.post(url, data, {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      }
-    });
-    console.log('Button message sent:', response.data);
-  } catch (error) {
-    console.error('Error sending button message:', error.response ? error.response.data : error.message);
-  }
-}
+//   try {
+//     const response = await axios.post(url, data, {
+//       headers: {
+//         'Content-Type': 'application/json',
+//         Authorization: `Bearer ${token}`
+//       }
+//     });
+//     console.log('Button message sent:', response.data);
+//   } catch (error) {
+//     console.error('Error sending button message:', error.response ? error.response.data : error.message);
+//   }
+// }
 
 // Function to send a chatbot info button message
 async function sendChatbotMessage({ phoneNumberId, to }) {
@@ -268,7 +270,7 @@ async function sendBookDemoMessage({ phoneNumberId, to }) {
 }
 
 module.exports = {
-  sendButtonMessage,
+  // sendButtonMessage, // Disabled: Old TopEdge AI flow. Use CODE CLINIC flow in index.js only.
   sendChatbotMessage,
   sendAICallerMessage,
   sendBookDemoMessage
