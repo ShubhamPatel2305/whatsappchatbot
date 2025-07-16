@@ -285,14 +285,15 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
         chosenDay = today.toLocaleDateString('en-US', { weekday: 'long' });
       }
       session.data.day = chosenDay;
-      await sendWhatsAppButtons({
+      await sendWhatsAppList({
         phoneNumberId,
         to: from,
         header: 'Pick a time ⏰',
         body: `Great! Here are the available time slots for ${chosenDay}:\nPick a time that suits you ⏰`,
-        buttons: getAvailableTimeSlots(chosenDay)
+        button: 'Select Time',
+        rows: getAvailableTimeSlots(chosenDay).map(slot => ({ id: slot.id, title: slot.title }))
       });
-      session.step = 'appt_time';
+      session.step = 'appt_time_waiting';
       res.status(200).end();
       return;
     } else if (userMsg === 'appt_pick_day') {
@@ -333,14 +334,15 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
     const pickedDay = getAvailableDays().find(day => day.id === userMsg);
     if (pickedDay) {
       session.data.day = pickedDay.title;
-      await sendWhatsAppButtons({
+      await sendWhatsAppList({
         phoneNumberId,
         to: from,
         header: 'Pick a time ⏰',
         body: `Great! Here are the available time slots for ${pickedDay.title}:\nPick a time that suits you ⏰`,
-        buttons: getAvailableTimeSlots(pickedDay.title)
+        button: 'Select Time',
+        rows: getAvailableTimeSlots(pickedDay.title).map(slot => ({ id: slot.id, title: slot.title }))
       });
-      session.step = 'appt_time';
+      session.step = 'appt_time_waiting';
       res.status(200).end();
       return;
     } else {
@@ -359,8 +361,8 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
     }
   }
 
-  // Appointment: Time slot selection
-  if (session.step === 'appt_time') {
+  // Appointment: Time slot selection (list reply)
+  if (session.step === 'appt_time_waiting') {
     const pickedSlot = getAvailableTimeSlots(session.data.day).find(slot => slot.id === userMsg);
     if (pickedSlot) {
       session.data.time = pickedSlot.title;
@@ -374,14 +376,15 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
       return;
     } else {
       // Fallback
-      await sendWhatsAppButtons({
+      await sendWhatsAppList({
         phoneNumberId,
         to: from,
         header: 'Pick a time ⏰',
         body: `Please pick a time slot for ${session.data.day}:`,
-        buttons: getAvailableTimeSlots(session.data.day)
+        button: 'Select Time',
+        rows: getAvailableTimeSlots(session.data.day).map(slot => ({ id: slot.id, title: slot.title }))
       });
-      session.step = 'appt_time';
+      session.step = 'appt_time_waiting';
       res.status(200).end();
       return;
     }
