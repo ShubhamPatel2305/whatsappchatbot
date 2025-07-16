@@ -7,6 +7,7 @@ const { sendAdminInitialButtons, sendAdminLeaveDateList } = require('./utils/Ste
 const { parseDateFromId } = require('./utils/helpers');
 const connectDB = require('./db');
 const { DoctorScheduleOverride } = require('./models/DoctorScheduleOverride');
+const fs = require('fs');
 
 // Load environment variables
 dotenv.config();
@@ -25,6 +26,9 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 let isWaitingForTimeSlot = false;
 let waitingForPartial   = false;
 let partialDate         = '';
+
+// Load knowledge base for OpenAI
+const knowledgeBase = fs.readFileSync(require('path').join(__dirname, 'utils', 'knowledgeBase.txt'), 'utf8');
 
 // In-memory state store for user sessions (for MVP; replace with Redis/DB for production)
 const userSessions = {};
@@ -192,6 +196,40 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
   const session = getUserSession(from);
   const userMsgType = messages.type;
   const userMsg = userMsgType === 'interactive' ? (messages.interactive?.button_reply?.id || messages.interactive?.list_reply?.id) : messages.text?.body;
+
+  // AI-powered free-text handling (not a button/list reply)
+  if (userMsgType === 'text' && (!session.step || session.step === 'home' || session.step === 'home_waiting' || session.step === 'faq_menu' || session.step === 'appt_day' || session.step === 'appt_pick_day_waiting' || session.step === 'appt_time_waiting')) {
+    // Compose OpenAI prompt
+    const prompt = `You are Ava, a helpful assistant for CODE CLINIC. Use the following knowledge base to answer user questions. Always be friendly, concise, and use new lines for clarity. If the answer is not in the knowledge base, follow the fallback instructions.\n\n[KNOWLEDGE BASE]\n${knowledgeBase}\n\n[USER]: ${userMsg}\n[ASSISTANT]:`;
+    let aiResponse = '';
+    try {
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        temperature: 0.3,
+        messages: [
+          { role: 'system', content: 'You are Ava, a helpful assistant for CODE CLINIC.' },
+          { role: 'user', content: prompt }
+        ]
+      });
+      aiResponse = completion.choices[0].message.content.trim();
+    } catch (err) {
+      aiResponse = "Sorry, I'm having trouble accessing my knowledge base right now. Please try again later or use the buttons below.";
+    }
+    // Always append the two main buttons
+    await sendSmartButtonsOrList({
+      phoneNumberId,
+      to: from,
+      header: undefined,
+      body: aiResponse,
+      buttons: [
+        { id: 'user_schedule_appt', title: 'Book Appointment' },
+        { id: 'user_ask_question', title: 'Ask a Question' }
+      ]
+    });
+    session.step = 'home_waiting';
+    res.status(200).end();
+    return;
+  }
 
   // Allow restart at any point
   if (userMsg === 'user_home' || userMsg === 'faq_home') {
