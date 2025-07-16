@@ -212,13 +212,14 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
       res.status(200).end();
       return;
     } else if (userMsg === 'user_ask_question') {
-      // Go to FAQ flow step 1
-      await sendWhatsAppButtons({
+      // Go to FAQ flow step 1 (use list message for more than 3 options)
+      await sendWhatsAppList({
         phoneNumberId,
         to: from,
         header: 'Happy to help!',
         body: 'What would you like to know?',
-        buttons: [
+        button: 'Select Option',
+        rows: [
           { id: 'faq_hours', title: 'Clinic Hours' },
           { id: 'faq_payment', title: 'Payment & Insurance' },
           { id: 'faq_services', title: 'Services We Offer' },
@@ -230,7 +231,7 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
       res.status(200).end();
       return;
     } else {
-      // Fallback for unexpected input
+      // Fallback for unexpected input (max 3 buttons)
       await sendWhatsAppButtons({
         phoneNumberId,
         to: from,
@@ -417,80 +418,81 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
     }
   }
 
-  // FAQ menu
+  // FAQ menu (now using list reply)
   if (session.step === 'faq_menu') {
-    if (userMsg === 'faq_hours') {
-      await sendWhatsAppButtons({
-        phoneNumberId,
-        to: from,
-        header: 'Clinic Hours',
-        body: '⏰ Our clinic is open:\nMonday to Saturday: 10:00 AM – 6:00 PM\nSunday: Closed\n\nNeed help with something else?',
-        buttons: [
-          { id: 'user_schedule_appt', title: 'Book Appointment' },
-          { id: 'user_ask_question', title: 'Ask Another Question' },
-          { id: 'user_home', title: 'Go Home' }
-        ]
-      });
+    if ([
+      'faq_hours',
+      'faq_payment',
+      'faq_services',
+      'faq_human',
+      'faq_home'
+    ].includes(userMsg)) {
+      // Respond to each FAQ option with a valid button set (max 3)
+      if (userMsg === 'faq_hours') {
+        await sendWhatsAppButtons({
+          phoneNumberId,
+          to: from,
+          header: 'Clinic Hours',
+          body: '⏰ Our clinic is open:\nMonday to Saturday: 10:00 AM – 6:00 PM\nSunday: Closed\n\nNeed help with something else?',
+          buttons: [
+            { id: 'user_schedule_appt', title: 'Book Appointment' },
+            { id: 'user_ask_question', title: 'Ask Another Question' },
+            { id: 'user_home', title: 'Go Home' }
+          ]
+        });
+      } else if (userMsg === 'faq_payment') {
+        await sendWhatsAppButtons({
+          phoneNumberId,
+          to: from,
+          header: 'Payment & Insurance',
+          body: 'We accept most major payment methods:\n💳 Cards, 💵 Cash, UPI, and insurance from select providers.\n\nWant more info?',
+          buttons: [
+            { id: 'user_schedule_appt', title: 'Book Appointment' },
+            { id: 'user_ask_question', title: 'Ask Another Question' },
+            { id: 'user_home', title: 'Go Home' }
+          ]
+        });
+      } else if (userMsg === 'faq_services') {
+        await sendWhatsAppButtons({
+          phoneNumberId,
+          to: from,
+          header: 'Services We Offer',
+          body: 'We offer a wide range of dental and medical services.\nFor details, visit our website or ask for a specific service!\n\nNeed help with something else?',
+          buttons: [
+            { id: 'user_schedule_appt', title: 'Book Appointment' },
+            { id: 'user_ask_question', title: 'Ask Another Question' },
+            { id: 'user_home', title: 'Go Home' }
+          ]
+        });
+      } else if (userMsg === 'faq_human') {
+        await sendWhatsAppButtons({
+          phoneNumberId,
+          to: from,
+          header: 'Talk to a Human',
+          body: 'Sure! I’ve noted your request.\n👨‍⚕ One of our team members will reach out to you shortly.\n\nIn the meantime, you can:',
+          buttons: [
+            { id: 'user_schedule_appt', title: 'Book Appointment' },
+            { id: 'user_ask_question', title: 'Ask Another Question' },
+            { id: 'user_home', title: 'Go Home' }
+          ]
+        });
+      } else if (userMsg === 'faq_home') {
+        session.step = 'home';
+        await handleUserChatbotFlow({ from, phoneNumberId, messages: { type: 'trigger' }, res });
+        return;
+      }
       session.step = 'faq_menu';
       res.status(200).end();
-      return;
-    } else if (userMsg === 'faq_payment') {
-      await sendWhatsAppButtons({
-        phoneNumberId,
-        to: from,
-        header: 'Payment & Insurance',
-        body: 'We accept most major payment methods:\n💳 Cards, 💵 Cash, UPI, and insurance from select providers.\n\nWant more info?',
-        buttons: [
-          { id: 'user_schedule_appt', title: 'Book Appointment' },
-          { id: 'user_ask_question', title: 'Ask Another Question' },
-          { id: 'user_home', title: 'Go Home' }
-        ]
-      });
-      session.step = 'faq_menu';
-      res.status(200).end();
-      return;
-    } else if (userMsg === 'faq_services') {
-      await sendWhatsAppButtons({
-        phoneNumberId,
-        to: from,
-        header: 'Services We Offer',
-        body: 'We offer a wide range of dental and medical services.\nFor details, visit our website or ask for a specific service!\n\nNeed help with something else?',
-        buttons: [
-          { id: 'user_schedule_appt', title: 'Book Appointment' },
-          { id: 'user_ask_question', title: 'Ask Another Question' },
-          { id: 'user_home', title: 'Go Home' }
-        ]
-      });
-      session.step = 'faq_menu';
-      res.status(200).end();
-      return;
-    } else if (userMsg === 'faq_human') {
-      await sendWhatsAppButtons({
-        phoneNumberId,
-        to: from,
-        header: 'Talk to a Human',
-        body: 'Sure! I’ve noted your request.\n👨‍⚕ One of our team members will reach out to you shortly.\n\nIn the meantime, you can:',
-        buttons: [
-          { id: 'user_schedule_appt', title: 'Book Appointment' },
-          { id: 'user_ask_question', title: 'Ask Another Question' },
-          { id: 'user_home', title: 'Go Home' }
-        ]
-      });
-      session.step = 'faq_menu';
-      res.status(200).end();
-      return;
-    } else if (userMsg === 'faq_home') {
-      session.step = 'home';
-      await handleUserChatbotFlow({ from, phoneNumberId, messages: { type: 'trigger' }, res });
       return;
     } else {
-      // Fallback
-      await sendWhatsAppButtons({
+      // Fallback for unexpected input in FAQ (use list again)
+      await sendWhatsAppList({
         phoneNumberId,
         to: from,
         header: 'Oops! I didn’t catch that 🙈',
-        body: 'Please use the buttons below so I can guide you better:',
-        buttons: [
+        body: 'Please use the options below so I can guide you better:',
+        button: 'Select Option',
+        rows: [
           { id: 'faq_hours', title: 'Clinic Hours' },
           { id: 'faq_payment', title: 'Payment & Insurance' },
           { id: 'faq_services', title: 'Services We Offer' },
