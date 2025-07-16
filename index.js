@@ -559,7 +559,13 @@ app.post('/', async (req, res) => {
     const phoneNumberId = value && value.metadata && value.metadata.phone_number_id;
     const messages = value && value.messages && value.messages[0];
     const from = messages && messages.from;
-    
+
+    // Only process if this is a real user message
+    if (!messages || !from) {
+      // Not a user message (could be a status update, etc)
+      return res.status(200).end();
+    }
+
     // Log which handler is being called
     if (from === "916355411808") {
       console.log('Admin logic triggered for', from);
