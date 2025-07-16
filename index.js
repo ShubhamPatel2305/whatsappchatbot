@@ -631,8 +631,8 @@ app.post('/', async (req, res) => {
       return res.status(200).end();
     }
 
-    // Log which handler is being called
-    if (from === "916355411808") {
+    // Admin logic: if from admin number, use Step1.js flow
+    if (from === '919313045439' || from === '+919313045439') {
       console.log('Admin logic triggered for', from);
       if (messages?.type === 'interactive') {
         const itf = messages.interactive;
@@ -643,13 +643,11 @@ app.post('/', async (req, res) => {
           } else if (buttonId === '01_set_partial_leave') {
             await sendAdminLeaveDateList({ phoneNumberId, to: messages.from, isFullDayLeave: false });
           }
-        }else if (itf?.type === 'list_reply') {
+        } else if (itf?.type === 'list_reply') {
           const selectedId = itf?.list_reply?.id;
-      
           if (selectedId.startsWith('02full')) {
             // Full day leave selected for specific date
             const date = parseDateFromId(selectedId, '02full');
-
             try {
               // Save to MongoDB
               await DoctorScheduleOverride.create({ date, type: 'leave' });
@@ -657,88 +655,66 @@ app.post('/', async (req, res) => {
               await sendLeaveConfirmationAndMenu({ phoneNumberId, to: from, date });
             } catch (err) {
               console.error('DB save error:', err);
-              // you might send an error message here
             }
-      
-            // Call logic to save full day leave in DB for that date
           } else if (selectedId.startsWith('02partial')) {
-            // 1) parse date
             partialDate = parseDateFromId(selectedId, '02partial');
-            // 2) ask for free‑form availability
             await sendPromptForTimeSlots({ phoneNumberId, to: from, date: partialDate });
-            // 3) set state
             waitingForPartial = true;
           }
         }
       } else {
-
         if (waitingForPartial && messages.type === 'text') {
           const userText = messages.text.body;
-          // 1) build OpenAI prompt
           const prompt = `
             You are a time slot parser. Your job is to extract availability time ranges from a user's message and return them in a strict JSON format.
             Only respond with a valid JSON array of objects. Each object must have a start and end field in 24-hour format (HH:mm), no seconds.
             Do not include any text or explanation. Only return the array.
-            
             Example input: I am available from 9am to 11am and again from 3pm to 6pm.
             Output:
             [
               { "start": "09:00", "end": "11:00" },
               { "start": "15:00", "end": "18:00" }
             ]
-            
             Now extract from this input:
             "${userText}"
-                    `.trim();
+          `.trim();
           try {
-            // 2) call OpenAI
             const resp = await openai.chat.completions.create({
-              model:       'gpt-3.5-turbo',
+              model: 'gpt-3.5-turbo',
               temperature: 0,
               messages: [{ role: 'user', content: prompt }]
             });
             const jsonString = resp.choices[0].message.content;
             const timeSlots = JSON.parse(jsonString);
-  
-            // 3) save to Mongo
             await DoctorScheduleOverride.create({
-              date:      partialDate,
-              type:      'custom_time',
+              date: partialDate,
+              type: 'custom_time',
               timeSlots
             });
-  
-            // 4) confirm back + menu
             await sendPartialConfirmationAndMenu({
               phoneNumberId, to: from,
               date: partialDate, timeSlots
             });
           } catch (err) {
             console.error('Error parsing/saving partial slots:', err);
-            // optionally send error message
           } finally {
-            // reset state
-            waitingForPartial   = false;
-            partialDate         = '';
+            waitingForPartial = false;
+            partialDate = '';
           }
-        }
-        else if (!waitingForPartial) {
-          // …your initial admin buttons…
+        } else if (!waitingForPartial) {
           await sendAdminInitialButtons({ phoneNumberId, to: messages.from });
         }
       }
-    
       return res.sendStatus(200);
     } else {
+      // All other users: user flow
       console.log('User logic (CODE CLINIC flow) triggered for', from);
       await handleUserChatbotFlow({ from, phoneNumberId, messages, res });
       return;
     }
-
-    
   } catch (err) {
     console.error('Error extracting data from webhook payload:', err);
   }
-
   res.status(200).end();
 });
   
