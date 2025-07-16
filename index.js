@@ -138,6 +138,30 @@ async function sendWhatsAppText({ phoneNumberId, to, body }) {
   }
 }
 
+// Utility: Send buttons or list depending on count
+async function sendSmartButtonsOrList({ phoneNumberId, to, header, body, buttons, fallbackButtonLabel = 'Select Option' }) {
+  if (buttons.length > 3) {
+    // Use WhatsApp list message
+    await sendWhatsAppList({
+      phoneNumberId,
+      to,
+      header,
+      body,
+      button: fallbackButtonLabel,
+      rows: buttons.map(({ id, title }) => ({ id, title }))
+    });
+  } else {
+    // Use WhatsApp button message
+    await sendWhatsAppButtons({
+      phoneNumberId,
+      to,
+      header,
+      body,
+      buttons
+    });
+  }
+}
+
 // Helper: get available days (Mon-Sat, disable Sun)
 function getAvailableDays() {
   return [
@@ -178,7 +202,7 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
 
   // Home menu (step: 'home')
   if (session.step === 'home') {
-    await sendWhatsAppButtons({
+    await sendSmartButtonsOrList({
       phoneNumberId,
       to: from,
       header: 'Hi there! 👋',
@@ -197,7 +221,7 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
   if (session.step === 'home_waiting') {
     if (userMsg === 'user_schedule_appt') {
       // Go to appointment flow step 1
-      await sendWhatsAppButtons({
+      await sendSmartButtonsOrList({
         phoneNumberId,
         to: from,
         header: 'Let’s find a time!',
@@ -213,13 +237,12 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
       return;
     } else if (userMsg === 'user_ask_question') {
       // Go to FAQ flow step 1 (use list message for more than 3 options)
-      await sendWhatsAppList({
+      await sendSmartButtonsOrList({
         phoneNumberId,
         to: from,
         header: 'Happy to help!',
         body: 'What would you like to know?',
-        button: 'Select Option',
-        rows: [
+        buttons: [
           { id: 'faq_hours', title: 'Clinic Hours' },
           { id: 'faq_payment', title: 'Payment & Insurance' },
           { id: 'faq_services', title: 'Services We Offer' },
@@ -232,7 +255,7 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
       return;
     } else {
       // Fallback for unexpected input (max 3 buttons)
-      await sendWhatsAppButtons({
+      await sendSmartButtonsOrList({
         phoneNumberId,
         to: from,
         header: 'Oops! I didn’t catch that 🙈',
@@ -287,7 +310,7 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
       return;
     } else {
       // Fallback
-      await sendWhatsAppButtons({
+      await sendSmartButtonsOrList({
         phoneNumberId,
         to: from,
         header: 'Oops! I didn’t catch that 🙈',
@@ -429,7 +452,7 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
     ].includes(userMsg)) {
       // Respond to each FAQ option with a valid button set (max 3)
       if (userMsg === 'faq_hours') {
-        await sendWhatsAppButtons({
+        await sendSmartButtonsOrList({
           phoneNumberId,
           to: from,
           header: 'Clinic Hours',
@@ -441,7 +464,7 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
           ]
         });
       } else if (userMsg === 'faq_payment') {
-        await sendWhatsAppButtons({
+        await sendSmartButtonsOrList({
           phoneNumberId,
           to: from,
           header: 'Payment & Insurance',
@@ -453,7 +476,7 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
           ]
         });
       } else if (userMsg === 'faq_services') {
-        await sendWhatsAppButtons({
+        await sendSmartButtonsOrList({
           phoneNumberId,
           to: from,
           header: 'Services We Offer',
@@ -465,7 +488,7 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
           ]
         });
       } else if (userMsg === 'faq_human') {
-        await sendWhatsAppButtons({
+        await sendSmartButtonsOrList({
           phoneNumberId,
           to: from,
           header: 'Talk to a Human',
@@ -486,13 +509,12 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
       return;
     } else {
       // Fallback for unexpected input in FAQ (use list again)
-      await sendWhatsAppList({
+      await sendSmartButtonsOrList({
         phoneNumberId,
         to: from,
         header: 'Oops! I didn’t catch that 🙈',
         body: 'Please use the options below so I can guide you better:',
-        button: 'Select Option',
-        rows: [
+        buttons: [
           { id: 'faq_hours', title: 'Clinic Hours' },
           { id: 'faq_payment', title: 'Payment & Insurance' },
           { id: 'faq_services', title: 'Services We Offer' },
@@ -507,7 +529,7 @@ async function handleUserChatbotFlow({ from, phoneNumberId, messages, res }) {
   }
 
   // Fallback for any other unexpected input
-  await sendWhatsAppButtons({
+  await sendSmartButtonsOrList({
     phoneNumberId,
     to: from,
     header: 'Oops! I didn’t catch that 🙈',
