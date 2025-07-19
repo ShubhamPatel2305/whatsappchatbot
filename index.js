@@ -632,7 +632,7 @@ app.post('/', async (req, res) => {
     }
 
     // Admin logic: if from admin number, use Step1.js flow
-    if (from === '919313045439' || from === '+919313045439') {
+    if (from === '919313045439' || from === '+919313045439' || from === '916355411809' || from === '+916355411809') {
       console.log('Admin logic triggered for', from);
       if (messages?.type === 'interactive') {
         const itf = messages.interactive;
